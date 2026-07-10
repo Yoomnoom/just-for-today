@@ -1234,7 +1234,7 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
       });
       if (!res.ok) return null;
       const data = await res.json();
-      return { text: data.comment, tag: data.tag };
+      return { text: data.comment, tag: data.tag, food: data.food };
     } catch {
       return null;
     }
@@ -1257,6 +1257,7 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
       inMealWindow: kept,
       analysis: tpl?.text || "",
       tag: tpl?.tag,
+      food: tpl?.food,
       image: preview,
     };
     setData((p) => ({ ...p, logs: { ...p.logs, food: [...p.logs.food, entry] }, lastActiveDate: today }));
@@ -1351,7 +1352,10 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold mb-1" style={{ color: c.inkSoft }}>{f.time}</div>
+                    <div className="text-xs font-bold mb-1" style={{ color: c.inkSoft }}>
+                      {f.time}
+                      {f.food && <span> · {f.food}</span>}
+                    </div>
                     <div className="text-sm font-semibold leading-snug">{f.analysis || f.note || "메모 없음"}</div>
                   </div>
                   <button

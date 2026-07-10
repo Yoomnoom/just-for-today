@@ -5,12 +5,13 @@ const PROMPT = `당신은 친절한 식단 코치입니다. 첨부된 음식 사
 다른 설명, 마크다운, 코드블록 없이 순수 JSON 객체 하나만 출력하세요.
 
 {
+  "food": "사진 속 음식 이름 (예: 뼈해장국, 샐러드, 김치찌개 등). 정확한 이름을 모르면 보이는 재료로 최대한 구체적으로 추정",
   "탄수화물": "낮음" | "보통" | "높음",
   "단백질": "낮음" | "보통" | "높음",
   "지방": "낮음" | "보통" | "높음",
   "채소/비타민": "낮음" | "보통" | "높음",
   "tag": "탄수화물 많음" | "균형 좋음" | "비타민 부족" | "가공식품 많음" | "단백질 보완",
-  "comment": "한국어 한 문장, 친근하고 다정한 말투의 피드백"
+  "comment": "food 이름을 자연스럽게 언급하며 한국어 한 문장, 친근하고 다정한 말투의 피드백"
 }`;
 
 export default async function handler(req, res) {
@@ -64,7 +65,12 @@ export default async function handler(req, res) {
     }
     const parsed = JSON.parse(braceMatch[0]);
 
-    if (!VALID_TAGS.includes(parsed.tag) || !VALID_LEVELS.includes(parsed["탄수화물"])) {
+    if (
+      !VALID_TAGS.includes(parsed.tag) ||
+      !VALID_LEVELS.includes(parsed["탄수화물"]) ||
+      typeof parsed.food !== "string" ||
+      !parsed.food.trim()
+    ) {
       console.error("Gemini 응답 형식이 예상과 다름:", JSON.stringify(parsed));
       throw new Error("Unexpected response shape");
     }
