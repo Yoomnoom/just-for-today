@@ -51,20 +51,27 @@ export default async function handler(req, res) {
 
     const json = await geminiRes.json();
     if (!geminiRes.ok) {
+      console.error("Gemini API 오류 응답:", JSON.stringify(json));
       res.status(502).json({ error: json?.error?.message || "Gemini API error" });
       return;
     }
 
     const text = json?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    const cleaned = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(cleaned);
+    const braceMatch = text.match(/\{[\s\S]*\}/);
+    if (!braceMatch) {
+      console.error("Gemini 응답에서 JSON을 찾지 못함. 원본 텍스트:", text);
+      throw new Error("No JSON in response");
+    }
+    const parsed = JSON.parse(braceMatch[0]);
 
     if (!VALID_TAGS.includes(parsed.tag) || !VALID_LEVELS.includes(parsed["탄수화물"])) {
+      console.error("Gemini 응답 형식이 예상과 다름:", JSON.stringify(parsed));
       throw new Error("Unexpected response shape");
     }
 
     res.status(200).json(parsed);
   } catch (err) {
+    console.error("음식 사진 분석 실패:", err?.message || err);
     res.status(502).json({ error: "Analysis failed" });
   }
 }
