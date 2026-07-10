@@ -1243,8 +1243,11 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
   const save = async () => {
     if (analyzing) return;
     setAnalyzing(true);
-    const analyzed = await analyzeFood(preview);
-    const tpl = analyzed || FOOD_TEMPLATES[Math.floor(Math.random() * FOOD_TEMPLATES.length)];
+    let tpl = null;
+    if (preview) {
+      const analyzed = await analyzeFood(preview);
+      tpl = analyzed || FOOD_TEMPLATES[Math.floor(Math.random() * FOOD_TEMPLATES.length)];
+    }
     const kept = isMealTimeKept(today, time, data.mealStart);
     const entry = {
       id: uid(),
@@ -1252,8 +1255,8 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
       time,
       note,
       inMealWindow: kept,
-      analysis: tpl.text,
-      tag: tpl.tag,
+      analysis: tpl?.text || "",
+      tag: tpl?.tag,
       image: preview,
     };
     setData((p) => ({ ...p, logs: { ...p.logs, food: [...p.logs.food, entry] }, lastActiveDate: today }));
@@ -1349,7 +1352,7 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold mb-1" style={{ color: c.inkSoft }}>{f.time}</div>
-                    <div className="text-sm font-semibold leading-snug">{f.analysis}</div>
+                    <div className="text-sm font-semibold leading-snug">{f.analysis || f.note || "메모 없음"}</div>
                   </div>
                   <button
                     onClick={() => {
