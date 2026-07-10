@@ -18,6 +18,7 @@ import {
   Aperture,
   Download,
   Info,
+  Loader2,
 } from "lucide-react";
 import {
   LineChart,
@@ -1179,6 +1180,7 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
   const [note, setNote] = useState("");
   const [time, setTime] = useState(timeStr(now));
   const [preview, setPreview] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
   const fileRef = useRef(null);
 
   const today = todayStr(now);
@@ -1192,8 +1194,27 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
     reader.readAsDataURL(file);
   };
 
-  const save = () => {
-    const tpl = FOOD_TEMPLATES[Math.floor(Math.random() * FOOD_TEMPLATES.length)];
+  const analyzeFood = async (image) => {
+    if (!image) return null;
+    try {
+      const res = await fetch("/api/analyze-food", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return { text: data.comment, tag: data.tag };
+    } catch {
+      return null;
+    }
+  };
+
+  const save = async () => {
+    if (analyzing) return;
+    setAnalyzing(true);
+    const analyzed = await analyzeFood(preview);
+    const tpl = analyzed || FOOD_TEMPLATES[Math.floor(Math.random() * FOOD_TEMPLATES.length)];
     const kept = isMealTimeKept(today, time, data.mealStart);
     const entry = {
       id: uid(),
@@ -1211,6 +1232,7 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
     setNote("");
     setPreview(null);
     setTime(timeStr(new Date()));
+    setAnalyzing(false);
   };
 
   return (
@@ -1266,10 +1288,18 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
 
         <button
           onClick={save}
-          className="w-full py-3.5 rounded-2xl font-extrabold text-sm mb-8"
+          disabled={analyzing}
+          className="w-full py-3.5 rounded-2xl font-extrabold text-sm mb-8 flex items-center justify-center gap-2 disabled:opacity-70"
           style={{ background: BRAND_DARK, color: c.yellow }}
         >
-          기록 저장하기
+          {analyzing ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              사진 분석 중...
+            </>
+          ) : (
+            "기록 저장하기"
+          )}
         </button>
 
         {list.length > 0 && (
