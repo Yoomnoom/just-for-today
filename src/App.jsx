@@ -82,6 +82,29 @@ const FOOD_TEMPLATES = [
 
 const EXERCISE_TYPES = ["걷기", "달리기", "헬스", "수영", "요가", "홈트"];
 
+function resizeImage(dataUrl, maxDim = 1024, quality = 0.72) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > height && width > maxDim) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else if (height > maxDim) {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 function pad(n) {
   return String(n).padStart(2, "0");
 }
@@ -1190,8 +1213,15 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result);
+    reader.onload = async () => {
+      const resized = await resizeImage(reader.result);
+      setPreview(resized);
+    };
     reader.readAsDataURL(file);
+  };
+
+  const deleteEntry = (id) => {
+    setData((p) => ({ ...p, logs: { ...p.logs, food: p.logs.food.filter((f) => f.id !== id) } }));
   };
 
   const analyzeFood = async (image) => {
@@ -1321,6 +1351,16 @@ function FoodScreen({ data, setData, addPoints, goBack, goToWeight }) {
                     <div className="text-xs font-bold mb-1" style={{ color: c.inkSoft }}>{f.time}</div>
                     <div className="text-sm font-semibold leading-snug">{f.analysis}</div>
                   </div>
+                  <button
+                    onClick={() => {
+                      if (window.confirm("이 기록을 삭제할까요?")) deleteEntry(f.id);
+                    }}
+                    className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center"
+                    style={{ background: c.cardMuted, color: c.inkSoft }}
+                    aria-label="기록 삭제"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               ))}
             </div>
